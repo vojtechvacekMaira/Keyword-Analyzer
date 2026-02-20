@@ -1,0 +1,1218 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Keyword Analyzer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --primary: #083027;
+  --primary-light: #0f4a3c;
+  --accent: #FF4D15;
+  --accent-hover: #e63d08;
+  --bg: #F8FAFC;
+  --white: #ffffff;
+  --border: #e2e8f0;
+  --text-dark: #0f172a;
+  --text-muted: #64748b;
+  --text-light: #94a3b8;
+  --success: #16a34a;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text-dark); min-height: 100vh; font-size: 14px; }
+
+/* HEADER */
+header { background: var(--primary); padding: 0 1.5rem; display: flex; align-items: center; gap: 1.5rem; height: 52px; position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 0 rgba(255,255,255,0.06), 0 4px 24px rgba(8,48,39,0.35); }
+.logo { font-family: Arial, sans-serif; font-weight: 700; font-size: 1rem; color: #fff; letter-spacing: 0; display: flex; align-items: center; gap: 0.45rem; white-space: nowrap; flex-shrink: 0; }
+.logo-dot { width: 7px; height: 7px; background: var(--accent); border-radius: 50%; flex-shrink: 0; }
+.header-nav { display: flex; align-items: center; gap: 0.35rem; flex: 1; }
+.nav-tab { font-family: 'DM Sans', sans-serif; font-size: 12.5px; font-weight: 500; color: rgba(255,255,255,0.55); background: transparent; border: 1px solid transparent; border-radius: 6px; padding: 5px 14px; cursor: pointer; transition: all 0.15s; white-space: nowrap; text-decoration: none; }
+.nav-tab:hover { color: rgba(255,255,255,0.85); background: rgba(255,255,255,0.07); }
+.nav-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; }
+.header-right { font-size: 11px; color: rgba(255,255,255,0.3); font-weight: 300; white-space: nowrap; flex-shrink: 0; }
+
+/* MAIN */
+main { max-width: 1400px; margin: 0 auto; padding: 1.5rem 2rem; }
+
+/* UPLOAD */
+.upload-zone { background: var(--white); border: 2px dashed var(--border); border-radius: 14px; padding: 2.5rem 2rem; text-align: center; cursor: pointer; transition: all 0.2s; margin-bottom: 1.5rem; position: relative; }
+.upload-zone:hover, .upload-zone.drag-over { border-color: var(--accent); background: #fff8f6; }
+.upload-icon { font-size: 2.2rem; margin-bottom: 0.75rem; display: block; }
+.upload-zone h2 { font-family: Arial, sans-serif; font-weight: 700; font-size: 1.05rem; color: var(--primary); margin-bottom: 0.4rem; }
+.upload-zone p { color: var(--text-muted); font-size: 13px; }
+.upload-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+.badge-format { display: inline-block; background: #ecfdf5; color: var(--success); border: 1px solid #bbf7d0; border-radius: 99px; padding: 2px 10px; font-size: 11px; font-weight: 500; margin-top: 0.6rem; }
+.file-loaded-info { display: none; align-items: center; justify-content: center; gap: 0.5rem; margin-top: 0.75rem; font-size: 12px; color: var(--success); font-weight: 500; }
+
+/* SETTINGS */
+.settings-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 1.25rem; }
+.card { background: var(--white); border: 1px solid var(--border); border-radius: 10px; padding: 1.2rem 1.4rem; }
+.card-title { font-family: 'DM Sans', sans-serif; font-weight: 600; font-size: 0.7rem; color: var(--text-muted); margin-bottom: 0.9rem; display: flex; align-items: center; gap: 0.5rem; text-transform: uppercase; letter-spacing: 0.08em; }
+.card-title .accent-dot { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; flex-shrink: 0; }
+
+/* CTR */
+.ctr-scenarios { display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center; }
+.ctr-item { display: flex; align-items: center; gap: 0.35rem; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 0.35rem 0.55rem; }
+.ctr-item input { width: 48px; border: none; background: transparent; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; color: var(--text-dark); outline: none; text-align: right; }
+.ctr-item span { color: var(--text-muted); font-size: 12px; }
+.ctr-item .remove-ctr { background: none; border: none; cursor: pointer; color: var(--text-light); font-size: 15px; line-height: 1; padding: 0 1px; transition: color 0.15s; }
+.ctr-item .remove-ctr:hover { color: var(--accent); }
+.btn-add-ctr { background: var(--primary); color: white; border: none; border-radius: 8px; padding: 0.35rem 0.7rem; font-size: 12px; cursor: pointer; font-family: 'DM Sans', sans-serif; font-weight: 500; transition: background 0.15s; margin-top: 0.6rem; }
+.btn-add-ctr:hover { background: var(--primary-light); }
+
+/* CPC mode */
+.cpc-mode { display: flex; gap: 0.4rem; }
+.cpc-btn { flex: 1; padding: 0.45rem 0.5rem; border: 1px solid var(--border); background: var(--bg); border-radius: 8px; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500; color: var(--text-muted); transition: all 0.15s; text-align: center; }
+.cpc-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+/* Tag rules */
+.tag-rules-list { display: flex; flex-direction: column; gap: 0.45rem; margin-bottom: 0.65rem; }
+.tag-rule-item { display: flex; align-items: center; gap: 0.5rem; background: var(--bg); border-radius: 8px; padding: 0.35rem 0.55rem; border: 1px solid var(--border); }
+.tag-rule-item input[type=text] { flex: 1; border: none; background: transparent; font-family: 'DM Sans', sans-serif; font-size: 12px; color: var(--text-dark); outline: none; }
+.tag-chip { display: inline-flex; align-items: center; gap: 4px; border-radius: 99px; padding: 2px 9px; font-size: 11px; font-weight: 500; white-space: nowrap; }
+.color-pick { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--border); cursor: pointer; padding: 0; background: none; flex-shrink: 0; }
+.btn-sm { background: none; border: none; cursor: pointer; color: var(--text-light); font-size: 15px; transition: color 0.15s; }
+.btn-sm:hover { color: var(--accent); }
+.btn-add-rule { background: none; border: 1px dashed var(--border); border-radius: 8px; padding: 0.35rem 0.7rem; font-family: 'DM Sans', sans-serif; font-size: 12px; color: var(--text-muted); cursor: pointer; transition: all 0.15s; width: 100%; }
+.btn-add-rule:hover { border-color: var(--primary); color: var(--primary); }
+.btn-accent { background: var(--accent); color: white; border: none; border-radius: 8px; padding: 0.4rem 0.9rem; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; transition: background 0.15s; }
+.btn-accent:hover { background: var(--accent-hover); }
+
+/* SECTION TITLE */
+.section-title { font-family: 'DM Sans', sans-serif; font-weight: 600; font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.75rem; }
+.section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* SUMMARY CARDS — prezentační styl */
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.25rem;
+}
+.summary-card {
+  background: var(--primary);
+  border-radius: 14px;
+  padding: 1.75rem 2rem;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 24px rgba(8,48,39,0.18);
+}
+.summary-card:hover { transform: translateY(-3px); box-shadow: 0 10px 36px rgba(8,48,39,0.26); }
+
+.summary-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+.summary-card-tag {
+  font-family: Arial, sans-serif;
+  font-weight: 700;
+  font-size: 1rem;
+  color: #fff;
+  letter-spacing: 0;
+}
+.summary-card-pill {
+  font-family: Arial, sans-serif;
+  font-size: 11px;
+  font-weight: 400;
+  color: rgba(255,255,255,0.55);
+  background: rgba(255,255,255,0.1);
+  border-radius: 99px;
+  padding: 3px 11px;
+}
+
+.summary-big-stat { margin-bottom: 1.5rem; }
+.summary-big-label {
+  font-family: Arial, sans-serif;
+  font-size: 11px;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: rgba(255,255,255,0.45);
+  margin-bottom: 0.35rem;
+}
+.summary-big-value {
+  font-family: Arial, sans-serif;
+  font-weight: 700;
+  font-size: 2.4rem;
+  color: #fff;
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+.summary-big-unit {
+  font-family: Arial, sans-serif;
+  font-size: 0.95rem;
+  font-weight: 400;
+  color: rgba(255,255,255,0.4);
+  margin-left: 0.25rem;
+}
+
+.summary-ctr-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border-top: 1px solid rgba(255,255,255,0.12);
+  padding-top: 1.1rem;
+}
+.summary-ctr-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+.summary-ctr-item:last-child { border-bottom: none; }
+.summary-ctr-item .ctr-label {
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+  color: rgba(255,255,255,0.65);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.ctr-badge {
+  background: rgba(255,255,255,0.1);
+  border-radius: 4px;
+  padding: 1px 7px;
+  font-family: Arial, sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.65);
+}
+.summary-ctr-item .ctr-cost {
+  font-family: Arial, sans-serif;
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: var(--accent);
+}
+
+/* ADVANCED FILTER PANEL */
+.filter-panel {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.2rem 1.4rem;
+  margin-bottom: 0.9rem;
+}
+.filter-panel-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr auto;
+  gap: 1rem 1.5rem;
+  align-items: end;
+}
+.filter-field { display: flex; flex-direction: column; gap: 0.35rem; }
+.filter-field label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-muted);
+}
+.filter-range-inputs { display: flex; align-items: center; gap: 0.4rem; }
+.filter-range-inputs input[type=number] {
+  width: 80px;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  outline: none;
+  transition: border-color 0.15s;
+  background: var(--bg);
+}
+.filter-range-inputs input[type=number]:focus { border-color: var(--primary); background: #fff; }
+.filter-range-sep { font-size: 12px; color: var(--text-light); }
+.filter-presets { display: flex; gap: 0.3rem; flex-wrap: wrap; margin-top: 0.3rem; }
+.preset-btn {
+  padding: 2px 9px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  border-radius: 99px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.preset-btn:hover { border-color: var(--primary); color: var(--primary); }
+.preset-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.filter-comp-btns { display: flex; gap: 0.3rem; }
+.filter-comp-btn {
+  flex: 1;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  border-radius: 7px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+}
+.filter-comp-btn.active-high  { background: #fee2e2; color: #dc2626; border-color: #fca5a5; }
+.filter-comp-btn.active-mid   { background: #fef3c7; color: #d97706; border-color: #fcd34d; }
+.filter-comp-btn.active-low   { background: #dcfce7; color: #16a34a; border-color: #86efac; }
+.btn-reset-filters {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.4rem 0.9rem;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  height: fit-content;
+}
+.btn-reset-filters:hover { border-color: var(--accent); color: var(--accent); }
+.filter-active-badge {
+  display: inline-block;
+  background: var(--accent);
+  color: white;
+  border-radius: 99px;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  margin-left: 0.4rem;
+  vertical-align: middle;
+}
+
+/* TAG RULE EDITOR */
+.tag-rules-list { display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 0.8rem; }
+
+.rule-block {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--bg);
+}
+.rule-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 0.75rem;
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+}
+.rule-label-input {
+  font-family: Arial, sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  border: none;
+  background: transparent;
+  outline: none;
+  color: var(--text-dark);
+  flex: 1;
+  min-width: 80px;
+}
+.rule-label-input::placeholder { color: var(--text-light); font-weight: 400; }
+.rule-color-pick { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--border); cursor: pointer; padding: 0; flex-shrink: 0; }
+.rule-preview-chip {
+  border-radius: 99px;
+  padding: 2px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: Arial, sans-serif;
+  flex-shrink: 0;
+}
+.rule-delete { background: none; border: none; cursor: pointer; color: var(--text-light); font-size: 16px; margin-left: auto; transition: color 0.15s; flex-shrink: 0; }
+.rule-delete:hover { color: #dc2626; }
+
+.rule-conditions { padding: 0.6rem 0.75rem; display: flex; flex-direction: column; gap: 0.4rem; }
+.condition-row { display: flex; align-items: center; gap: 0.4rem; }
+.cond-select {
+  padding: 0.3rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+  background: var(--white);
+  outline: none;
+  cursor: pointer;
+  color: var(--text-dark);
+}
+.cond-value {
+  flex: 1;
+  padding: 0.3rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+  background: var(--white);
+  outline: none;
+  transition: border-color 0.15s;
+  min-width: 0;
+}
+.cond-value:focus { border-color: var(--primary); }
+.cond-value2 { width: 70px; padding: 0.3rem 0.5rem; border: 1px solid var(--border); border-radius: 6px; font-family: Arial, sans-serif; font-size: 12px; background: var(--white); outline: none; }
+.cond-remove { background: none; border: none; cursor: pointer; color: var(--text-light); font-size: 14px; transition: color 0.15s; flex-shrink: 0; }
+.cond-remove:hover { color: #dc2626; }
+.btn-add-condition {
+  background: none;
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  padding: 0.25rem 0.65rem;
+  font-family: Arial, sans-serif;
+  font-size: 11px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-top: 0.1rem;
+  align-self: flex-start;
+}
+.btn-add-condition:hover { border-color: var(--primary); color: var(--primary); }
+.cond-logic {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-light);
+  letter-spacing: 0.08em;
+  padding: 0 2px;
+  flex-shrink: 0;
+}
+
+/* SEASONALITY CHART */
+.chart-controls { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.2rem; flex-wrap: wrap; }
+.chart-controls-label { font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; flex-shrink: 0; }
+.chart-view-btns { display: flex; gap: 0.3rem; margin-left: auto; }
+.chart-view-btn { padding: 4px 12px; border: 1px solid var(--border); background: var(--bg); border-radius: 6px; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 500; color: var(--text-muted); transition: all 0.15s; }
+.chart-view-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+.chart-tag-filter { display: flex; gap: 0.3rem; flex-wrap: wrap; }
+.chart-tag-btn { padding: 3px 11px; border-radius: 99px; border: 1px solid var(--border); background: var(--bg); cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 500; color: var(--text-muted); transition: all 0.15s; }
+.chart-wrap { position: relative; height: 300px; }
+
+/* TOOLBAR */
+.toolbar { display: flex; align-items: center; gap: 0.65rem; margin-bottom: 0.9rem; flex-wrap: wrap; }
+.search-input { flex: 1; min-width: 180px; padding: 0.45rem 0.7rem 0.45rem 2rem; border: 1px solid var(--border); border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 13px; background: var(--white); outline: none; transition: border-color 0.15s; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13' fill='none' viewBox='0 0 24 24'%3E%3Ccircle cx='11' cy='11' r='8' stroke='%2394a3b8' stroke-width='2'/%3E%3Cpath stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' d='m21 21-4.35-4.35'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: 0.5rem center; }
+.search-input:focus { border-color: var(--primary); }
+.filter-select { padding: 0.45rem 0.7rem; border: 1px solid var(--border); border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 13px; background: var(--white); outline: none; cursor: pointer; }
+.btn-export-main { background: var(--accent); color: white; border: none; border-radius: 8px; padding: 0.45rem 1.1rem; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.15s; white-space: nowrap; }
+.btn-export-main:hover { background: var(--accent-hover); }
+
+/* TABLE */
+.table-wrap { background: var(--white); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+table { width: 100%; border-collapse: collapse; }
+thead { background: var(--primary); color: white; }
+th { font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; padding: 0.7rem 0.9rem; text-align: left; cursor: pointer; white-space: nowrap; user-select: none; }
+th:hover { background: var(--primary-light); }
+th.sorted-asc::after { content: ' ↑'; color: var(--accent); }
+th.sorted-desc::after { content: ' ↓'; color: var(--accent); }
+td { padding: 0.55rem 0.9rem; border-bottom: 1px solid var(--border); vertical-align: middle; font-size: 13px; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #f8fafc; }
+.td-keyword { font-weight: 500; max-width: 240px; }
+.td-keyword-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px; display: block; }
+.td-number { font-variant-numeric: tabular-nums; font-weight: 500; text-align: right; }
+.td-cost { color: var(--accent); font-weight: 600; }
+.tag-select { border: 1px solid var(--border); border-radius: 99px; padding: 2px 8px; font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 500; cursor: pointer; outline: none; background: var(--bg); }
+.comp-badge { display: inline-block; border-radius: 99px; padding: 2px 8px; font-size: 10px; font-weight: 600; }
+.comp-high { background: #fee2e2; color: #dc2626; }
+.comp-medium { background: #fef3c7; color: #d97706; }
+.comp-low { background: #dcfce7; color: #16a34a; }
+
+/* PAGINATION */
+.pagination { display: flex; align-items: center; justify-content: space-between; padding: 0.7rem 0.9rem; border-top: 1px solid var(--border); font-size: 12px; color: var(--text-muted); }
+.page-btns { display: flex; gap: 0.3rem; }
+.page-btn { padding: 0.28rem 0.55rem; border: 1px solid var(--border); background: var(--white); border-radius: 6px; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 12px; transition: all 0.15s; }
+.page-btn:hover, .page-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+.page-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* TOAST */
+.toast { position: fixed; bottom: 2rem; right: 2rem; background: var(--primary); color: white; padding: 0.7rem 1.2rem; border-radius: 10px; font-size: 13px; font-weight: 500; box-shadow: 0 4px 20px rgba(0,0,0,0.15); z-index: 999; transform: translateY(100px); opacity: 0; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.toast.show { transform: translateY(0); opacity: 1; }
+
+footer { background: var(--primary); color: rgba(255,255,255,0.35); text-align: center; padding: 0.9rem; font-size: 11px; margin-top: 3rem; }
+.hidden { display: none !important; }
+@media (max-width: 768px) { .settings-row { grid-template-columns: 1fr; } main { padding: 1rem; } }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo"><span class="logo-dot"></span>Keyword Analyzer</div>
+  <div class="header-right">Marketing Tools</div>
+</header>
+
+<main>
+
+  <!-- UPLOAD -->
+  <div class="upload-zone" id="uploadZone">
+    <input type="file" id="fileInput" accept=".csv">
+    <span class="upload-icon">📂</span>
+    <h2>Nahrát CSV soubor</h2>
+    <p>Přetáhni soubor sem nebo klikni pro výběr</p>
+    <span class="badge-format">✓ Google Keyword Planner CSV formát</span>
+    <div class="file-loaded-info" id="fileLoadedInfo">
+      <span>✓</span><span id="fileLoadedName"></span>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="settings-row">
+    <div class="card">
+      <div class="card-title"><span class="accent-dot"></span>CTR scénáře</div>
+      <div class="ctr-scenarios" id="ctrScenarios"></div>
+      <button class="btn-add-ctr" onclick="addCTR()">+ Přidat scénář</button>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="accent-dot"></span>Použitá hodnota CPC</div>
+      <div class="cpc-mode">
+        <button class="cpc-btn active" onclick="setCPCMode('avg',this)">Průměr</button>
+        <button class="cpc-btn" onclick="setCPCMode('low',this)">Nízký bid</button>
+        <button class="cpc-btn" onclick="setCPCMode('high',this)">Vysoký bid</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAG RULES -->
+  <div class="card" style="margin-bottom:1.4rem;">
+    <div class="card-title"><span class="accent-dot"></span>Pravidla štítků (auto-tagging)</div>
+    <div class="tag-rules-list" id="tagRulesList"></div>
+    <div style="display:flex;gap:0.5rem;align-items:center;">
+      <button class="btn-add-rule" style="flex:1;" onclick="addTagRule()">+ Přidat štítek</button>
+      <button class="btn-accent" onclick="applyTagRules()">▶ Aplikovat</button>
+    </div>
+  </div>
+
+  <!-- SUMMARY -->
+  <div id="summarySection" class="hidden">
+    <div class="section-title">Přehled podle štítků</div>
+    <div class="summary-grid" id="summaryGrid"></div>
+  </div>
+
+  <!-- SEASONALITY CHART -->
+  <div id="chartSection" class="hidden" style="margin-top:1.5rem;">
+    <div class="section-title">Sezónnost hledanosti</div>
+    <div class="chart-card">
+      <div class="chart-controls">
+        <span class="chart-controls-label">Zobrazit:</span>
+        <div class="chart-tag-filter" id="chartTagFilter"></div>
+        <div class="chart-view-btns">
+          <button class="chart-view-btn active" onclick="setChartType('bar',this)">Sloupcový</button>
+          <button class="chart-view-btn" onclick="setChartType('line',this)">Liniový</button>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="seasonChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABLE -->
+  <div id="tableSection" class="hidden" style="margin-top:1.5rem;">
+    <div class="section-title">Klíčová slova</div>
+    <div class="toolbar">
+      <input type="text" class="search-input" id="searchInput" placeholder="Hledat klíčové slovo..." oninput="filterTable()">
+      <select class="filter-select" id="tagFilter" onchange="filterTable()"><option value="">Všechny štítky</option></select>
+      <button class="btn-export-main" onclick="exportCSV()">⬇ Export CSV</button>
+    </div>
+    <div class="table-wrap">
+      <table><thead id="tableHead"></thead><tbody id="tableBody"></tbody></table>
+      <div class="pagination" id="pagination"></div>
+    </div>
+  </div>
+
+</main>
+
+<footer>Keyword Analyzer — lokální nástroj, žádná data nejsou odesílána na server</footer>
+<div class="toast" id="toast"></div>
+
+<script>
+// ── STATE ──────────────────────────────────────────────────────
+let rawData = [];
+let filteredData = [];
+let ctrScenarios = [2, 5, 10];
+let cpcMode = 'avg';
+let tagRules = [
+  { label: 'Brand', color: '#083027', conditions: [{ field:'keyword', op:'contains', value:'brand', value2:'' }] },
+  { label: 'Non-brand', color: '#FF4D15', conditions: [] },
+];
+let sortCol = null, sortDir = 1, currentPage = 1;
+const PAGE_SIZE = 50;
+const TAG_COLORS = ['#083027','#FF4D15','#2563eb','#7c3aed','#0891b2','#16a34a','#d97706','#dc2626'];
+const MONTH_ORDER = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const MONTH_CS    = ['Led','Úno','Bře','Dub','Kvě','Čvn','Čvc','Srp','Zář','Říj','Lis','Pro'];
+
+let seasonChart   = null;
+let chartType     = 'bar';
+let activeChartTags = new Set(['__all__']);
+
+// ── INIT ───────────────────────────────────────────────────────
+window.onload = () => {
+  renderCTRScenarios();
+  renderTagRules();
+  document.getElementById('uploadZone').addEventListener('dragover',  e => { e.preventDefault(); e.currentTarget.classList.add('drag-over'); });
+  document.getElementById('uploadZone').addEventListener('dragleave', e => e.currentTarget.classList.remove('drag-over'));
+  document.getElementById('uploadZone').addEventListener('drop', e => {
+    e.preventDefault(); e.currentTarget.classList.remove('drag-over');
+    const f = e.dataTransfer.files[0];
+    if (f && f.name.endsWith('.csv')) handleFile(f);
+    else showToast('⚠ Prosím nahraj CSV soubor');
+  });
+  document.getElementById('fileInput').addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
+};
+
+// ── FILE ───────────────────────────────────────────────────────
+function handleFile(file) {
+  const reader = new FileReader();
+  reader.onload = e => parseGKP(e.target.result.replace(/^\uFEFF/, ''), file.name);
+  reader.readAsText(file, 'UTF-8');
+}
+
+function parseGKP(text, filename) {
+  const lines = text.split(/\r?\n/);
+  const delim = lines[0]?.includes(';') ? ';' : ',';
+
+  // Find header row: first cell must be exactly "Keyword"
+  let hi = -1;
+  for (let i = 0; i < Math.min(lines.length, 10); i++) {
+    if (splitLine(lines[i], delim)[0]?.trim().toLowerCase() === 'keyword') { hi = i; break; }
+  }
+  if (hi === -1) { showToast('⚠ Záhlaví CSV nenalezeno'); return; }
+
+  const headers = splitLine(lines[hi], delim).map(h => clean(h).toLowerCase());
+
+  const ci = {
+    keyword:  0,
+    searches: headers.findIndex(h => h.includes('avg. monthly') || h.includes('průměrný')),
+    low:      headers.findIndex(h => h.includes('low range')    || h.includes('nízký')),
+    high:     headers.findIndex(h => h.includes('high range')   || h.includes('vysoký')),
+    comp:     headers.findIndex(h => h === 'competition'        || h === 'konkurence'),
+    currency: headers.indexOf('currency'),
+  };
+
+  // Monthly columns: "Searches: Jan 2025" / "Searches: Leden 2025"
+  const monthCols = [];
+  headers.forEach((h, i) => {
+    const m = h.match(/searches:\s*([a-záéíóúůěšžčřďťň]+)\s*(\d{4})/i);
+    if (!m) return;
+    const eng = csMonthToEn(m[1]) || capFirst(m[1].slice(0, 3));
+    monthCols.push({ i, month: eng, year: +m[2] });
+  });
+  monthCols.sort((a, b) => (a.year * 12 + MONTH_ORDER.indexOf(a.month)) - (b.year * 12 + MONTH_ORDER.indexOf(b.month)));
+
+  rawData = [];
+  for (let i = hi + 1; i < lines.length; i++) {
+    const c = splitLine(lines[i], delim);
+    const kw = clean(c[0]);
+    if (!kw) continue;
+    const searches = parseNum(c[ci.searches]);
+    const low  = ci.low  >= 0 ? parseNum(c[ci.low])  : null;
+    const high = ci.high >= 0 ? parseNum(c[ci.high]) : null;
+    const monthly = {};
+    monthCols.forEach(mc => { monthly[mc.month] = parseNum(c[mc.i]); });
+    rawData.push({
+      keyword: kw, searches, low, high,
+      cpc: calcCPC(low, high),
+      competition: ci.comp >= 0 ? clean(c[ci.comp]) : '',
+      currency:    ci.currency >= 0 ? clean(c[ci.currency]) : 'CZK',
+      monthly, tag: '',
+    });
+  }
+
+  if (!rawData.length) { showToast('⚠ Soubor neobsahuje žádná klíčová slova'); return; }
+
+  const info = document.getElementById('fileLoadedInfo');
+  document.getElementById('fileLoadedName').textContent = `${filename} — ${rawData.length} klíčových slov`;
+  info.style.display = 'flex';
+
+  applyTagRules();
+  showToast(`✓ Načteno ${rawData.length} klíčových slov`);
+}
+
+// ── HELPERS ────────────────────────────────────────────────────
+function splitLine(line, d) {
+  const r = []; let cur = '', q = false;
+  for (const c of line) {
+    if (c === '"') { q = !q; continue; }
+    if (c === d && !q) { r.push(cur); cur = ''; continue; }
+    cur += c;
+  }
+  r.push(cur); return r;
+}
+function clean(s)     { return (s || '').trim().replace(/^"|"$/g, ''); }
+function capFirst(s)  { return s.charAt(0).toUpperCase() + s.slice(1); }
+function parseNum(s) {
+  if (!s || s === '-') return 0;
+  const str = String(s).replace(/[^\d,.-]/g, '');
+  // "2,25" → decimal; "22,200" → thousands
+  if (/^\d+,\d{1,2}$/.test(str)) return parseFloat(str.replace(',', '.'));
+  return parseFloat(str.replace(/,/g, '')) || 0;
+}
+function calcCPC(low, high) {
+  if (cpcMode === 'low')  return low  || 0;
+  if (cpcMode === 'high') return high || 0;
+  if (low && high) return (low + high) / 2;
+  return low || high || 0;
+}
+function csMonthToEn(s) {
+  const m = { led:'Jan',uno:'Feb',bre:'Mar',dub:'Apr',kve:'May',cvn:'Jun',cvc:'Jul',srp:'Aug',zar:'Sep',rij:'Oct',lis:'Nov',pro:'Dec',
+               jan:'Jan',feb:'Feb',mar:'Mar',apr:'Apr',may:'May',jun:'Jun',jul:'Jul',aug:'Aug',sep:'Sep',oct:'Oct',nov:'Nov',dec:'Dec',
+               leden:'Jan',unor:'Feb',brezen:'Mar',duben:'Apr',kveten:'May',cerven:'Jun',cervenec:'Jul',srpen:'Aug',zari:'Sep',rijen:'Oct',listopad:'Nov',prosinec:'Dec' };
+  return m[s.toLowerCase().replace(/[áéíóúůěšžčřďťň]/g, c => ({á:'a',é:'e',í:'i',ó:'o',ú:'u',ů:'u',ě:'e',š:'s',ž:'z',č:'c',ř:'r',ď:'d',ť:'t',ň:'n'}[c]||c))];
+}
+function getTagColor(label) { const r = tagRules.find(r => r.label === label); return r ? r.color : '#94a3b8'; }
+function compClass(v) {
+  const s = (v||'').toLowerCase();
+  if (s.includes('vysoká')||s.includes('high'))   return 'comp-high';
+  if (s.includes('střední')||s.includes('medium')) return 'comp-medium';
+  return 'comp-low';
+}
+function formatMoney(val, cur) {
+  if (!val && val !== 0) return '—';
+  try { return new Intl.NumberFormat('cs-CZ', { style:'currency', currency: cur||'CZK', maximumFractionDigits:0 }).format(Math.round(val)); }
+  catch { return Math.round(val).toLocaleString('cs') + ' ' + (cur||'CZK'); }
+}
+
+// ── CTR ────────────────────────────────────────────────────────
+function renderCTRScenarios() {
+  document.getElementById('ctrScenarios').innerHTML = ctrScenarios.map((v, i) => `
+    <div class="ctr-item">
+      <input type="number" min="0.1" max="100" step="0.1" value="${v}"
+        onchange="ctrScenarios[${i}]=parseFloat(this.value)||0;renderAll()">
+      <span>%</span>
+      ${ctrScenarios.length > 1 ? `<button class="remove-ctr" onclick="removeCTR(${i})">×</button>` : ''}
+    </div>`).join('');
+}
+function addCTR()     { ctrScenarios.push(3); renderCTRScenarios(); renderAll(); }
+function removeCTR(i) { ctrScenarios.splice(i,1); renderCTRScenarios(); renderAll(); }
+
+// ── CPC ────────────────────────────────────────────────────────
+function setCPCMode(mode, btn) {
+  cpcMode = mode;
+  document.querySelectorAll('.cpc-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  rawData.forEach(r => { r.cpc = calcCPC(r.low, r.high); });
+  renderAll();
+}
+
+// ── TAG RULES ──────────────────────────────────────────────────
+const COND_FIELDS = [
+  { v:'keyword',   l:'Klíčové slovo' },
+  { v:'searches',  l:'Hledanost' },
+  { v:'cpc',       l:'CPC' },
+  { v:'competition',l:'Konkurence' },
+];
+const COND_OPS_TEXT = [
+  { v:'contains',    l:'obsahuje' },
+  { v:'notcontains', l:'neobsahuje' },
+  { v:'startswith',  l:'začíná na' },
+  { v:'endswith',    l:'končí na' },
+  { v:'regex',       l:'regex' },
+];
+const COND_OPS_NUM = [
+  { v:'gt', l:'>' },
+  { v:'gte',l:'≥' },
+  { v:'lt', l:'<' },
+  { v:'lte',l:'≤' },
+  { v:'between', l:'mezi' },
+];
+const COND_OPS_COMP = [
+  { v:'eq',  l:'=' },
+  { v:'neq', l:'≠' },
+];
+
+function opsForField(field) {
+  if (field === 'competition') return COND_OPS_COMP;
+  if (field === 'searches' || field === 'cpc') return COND_OPS_NUM;
+  return COND_OPS_TEXT;
+}
+
+function renderTagRules() {
+  document.getElementById('tagRulesList').innerHTML = tagRules.map((rule, ri) => {
+    const condRows = rule.conditions.map((cond, ci) => {
+      const ops = opsForField(cond.field);
+      const isNum  = cond.field === 'searches' || cond.field === 'cpc';
+      const isComp = cond.field === 'competition';
+      const showV2 = cond.op === 'between';
+
+      const fieldSel = `<select class="cond-select" onchange="updateCond(${ri},${ci},'field',this.value)">
+        ${COND_FIELDS.map(f=>`<option value="${f.v}"${cond.field===f.v?' selected':''}>${f.l}</option>`).join('')}
+      </select>`;
+
+      const opSel = `<select class="cond-select" onchange="updateCond(${ri},${ci},'op',this.value)">
+        ${ops.map(o=>`<option value="${o.v}"${cond.op===o.v?' selected':''}>${o.l}</option>`).join('')}
+      </select>`;
+
+      let valInput = '';
+      if (isComp) {
+        valInput = `<select class="cond-select cond-value" onchange="updateCond(${ri},${ci},'value',this.value)">
+          <option value="Vysoká"${cond.value==='Vysoká'?' selected':''}>Vysoká</option>
+          <option value="Střední"${cond.value==='Střední'?' selected':''}>Střední</option>
+          <option value="Nízká"${cond.value==='Nízká'?' selected':''}>Nízká</option>
+        </select>`;
+      } else {
+        const ph = isNum ? '0' : 'text...';
+        const tp = isNum ? 'number' : 'text';
+        valInput = `<input type="${tp}" class="cond-value" placeholder="${ph}" value="${cond.value||''}"
+          onchange="updateCond(${ri},${ci},'value',this.value)">`;
+      }
+
+      const v2Input = showV2
+        ? `<span class="cond-logic">a</span>
+           <input type="number" class="cond-value2" placeholder="do" value="${cond.value2||''}"
+             onchange="updateCond(${ri},${ci},'value2',this.value)">`
+        : '';
+
+      const logic = ci > 0
+        ? `<span class="cond-logic">A</span>`
+        : '';
+
+      return `<div class="condition-row">
+        ${logic}
+        ${fieldSel}${opSel}${valInput}${v2Input}
+        <button class="cond-remove" onclick="removeCond(${ri},${ci})">×</button>
+      </div>`;
+    }).join('');
+
+    return `<div class="rule-block">
+      <div class="rule-header">
+        <input class="rule-color-pick" type="color" value="${rule.color}"
+          oninput="tagRules[${ri}].color=this.value; renderTagRules()">
+        <span class="rule-preview-chip" style="background:${rule.color}22;color:${rule.color};border:1px solid ${rule.color}44;">
+          ${rule.label || 'Štítek'}
+        </span>
+        <input class="rule-label-input" type="text" placeholder="Název štítku"
+          value="${rule.label}" onchange="tagRules[${ri}].label=this.value; renderTagRules()">
+        <button class="rule-delete" onclick="removeTagRule(${ri})">×</button>
+      </div>
+      <div class="rule-conditions">
+        ${condRows}
+        <button class="btn-add-condition" onclick="addCond(${ri})">+ přidat podmínku</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function updateCond(ri, ci, key, val) {
+  tagRules[ri].conditions[ci][key] = val;
+  // If field changed, reset op to first valid one
+  if (key === 'field') {
+    tagRules[ri].conditions[ci].op = opsForField(val)[0].v;
+    tagRules[ri].conditions[ci].value = '';
+    tagRules[ri].conditions[ci].value2 = '';
+  }
+  renderTagRules();
+}
+
+function addCond(ri) {
+  tagRules[ri].conditions.push({ field:'keyword', op:'contains', value:'', value2:'' });
+  renderTagRules();
+}
+
+function removeCond(ri, ci) {
+  tagRules[ri].conditions.splice(ci, 1);
+  renderTagRules();
+}
+
+function addTagRule() {
+  tagRules.push({ label:'Nový štítek', color: TAG_COLORS[tagRules.length % TAG_COLORS.length], conditions:[] });
+  renderTagRules();
+}
+function removeTagRule(i) { tagRules.splice(i,1); renderTagRules(); }
+
+function matchesRule(row, rule) {
+  if (!rule.conditions.length) return true; // no conditions = catch-all
+  return rule.conditions.every(cond => {
+    const { field, op, value, value2 } = cond;
+    if (!value && op !== 'notcontains') return false;
+    const kw = (row.keyword || '').toLowerCase();
+    const v  = (value || '').toLowerCase();
+
+    if (field === 'keyword') {
+      if (op === 'contains')    return kw.includes(v);
+      if (op === 'notcontains') return !kw.includes(v);
+      if (op === 'startswith')  return kw.startsWith(v);
+      if (op === 'endswith')    return kw.endsWith(v);
+      if (op === 'regex') { try { return new RegExp(value,'i').test(row.keyword); } catch { return false; } }
+    }
+    if (field === 'searches' || field === 'cpc') {
+      const num = row[field] || 0;
+      const n1  = parseFloat(value) || 0;
+      const n2  = parseFloat(value2) || 0;
+      if (op === 'gt')  return num > n1;
+      if (op === 'gte') return num >= n1;
+      if (op === 'lt')  return num < n1;
+      if (op === 'lte') return num <= n1;
+      if (op === 'between') return num >= n1 && num <= n2;
+    }
+    if (field === 'competition') {
+      if (op === 'eq')  return row.competition === value;
+      if (op === 'neq') return row.competition !== value;
+    }
+    return false;
+  });
+}
+
+function applyTagRules() {
+  rawData.forEach(row => {
+    row.tag = '';
+    for (const rule of tagRules) {
+      if (matchesRule(row, rule)) { row.tag = rule.label; break; }
+    }
+    if (!row.tag) row.tag = 'Bez štítku';
+  });
+  renderAll();
+  if (rawData.length) showToast('✓ Štítky aplikovány');
+}
+
+// ── RENDER ALL ─────────────────────────────────────────────────
+function renderAll() {
+  if (!rawData.length) return;
+  renderSummary();
+  renderSeasonChart();
+  filterTable();
+  updateTagFilter();
+  ['summarySection','chartSection','tableSection'].forEach(id => document.getElementById(id).classList.remove('hidden'));
+}
+
+// ── SUMMARY ────────────────────────────────────────────────────
+function renderSummary() {
+  const g = {};
+  rawData.forEach(row => {
+    const tag = row.tag || 'Bez štítku';
+    if (!g[tag]) g[tag] = { searches:0, rows:0, cost:{}, clicks:{} };
+    g[tag].searches += row.searches;
+    g[tag].rows++;
+    ctrScenarios.forEach(ctr => {
+      const k = ''+ctr;
+      if (!g[tag].cost[k]) { g[tag].cost[k]=0; g[tag].clicks[k]=0; }
+      const clicks = row.searches * ctr / 100;
+      g[tag].clicks[k] += clicks;
+      g[tag].cost[k]   += clicks * row.cpc;
+    });
+  });
+  document.getElementById('summaryGrid').innerHTML = Object.entries(g).map(([tag, d]) => {
+    const color = getTagColor(tag);
+    // Accent color strip on top of card
+    const isAccent = color === '#FF4D15';
+    return `<div class="summary-card">
+      <div class="summary-card-header">
+        <div class="summary-card-tag">${tag}</div>
+        <div class="summary-card-pill">${d.rows.toLocaleString('cs')} slov</div>
+      </div>
+      <div class="summary-big-stat">
+        <div class="summary-big-label">Průměrná hledanost / měsíc</div>
+        <div class="summary-big-value">
+          ${Math.round(d.searches).toLocaleString('cs')}
+          <span class="summary-big-unit">hledání</span>
+        </div>
+      </div>
+      <div class="summary-ctr-row">
+        ${ctrScenarios.map(ctr => `
+          <div class="summary-ctr-item">
+            <span class="ctr-label">
+              <span class="ctr-badge">CTR ${ctr}%</span>
+              ${Math.round(d.clicks[''+ctr]).toLocaleString('cs')} kliků / měs.
+            </span>
+            <span class="ctr-cost">${formatMoney(d.cost[''+ctr])}</span>
+          </div>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── SEASONALITY CHART ──────────────────────────────────────────
+function renderSeasonChart() {
+  // Collect all months present in data
+  const allM = new Set();
+  rawData.forEach(r => Object.keys(r.monthly).forEach(m => allM.add(m)));
+  const months = MONTH_ORDER.filter(m => allM.has(m));
+  if (!months.length) return;
+
+  const tags = [...new Set(rawData.map(r => r.tag))].filter(Boolean);
+  const allActive = activeChartTags.has('__all__');
+
+  // Render tag buttons
+  document.getElementById('chartTagFilter').innerHTML = `
+    <button class="chart-tag-btn" style="${allActive?'background:var(--primary);color:#fff;border-color:var(--primary);':''}" onclick="toggleChartTag('__all__')">Vše</button>
+    ${tags.map(tag => {
+      const color = getTagColor(tag);
+      const on = !allActive && activeChartTags.has(tag);
+      return `<button class="chart-tag-btn" style="${on?`background:${color};color:#fff;border-color:${color};`:''}" onclick="toggleChartTag('${tag}')">${tag}</button>`;
+    }).join('')}`;
+
+  // Build datasets
+  let datasets;
+  if (allActive) {
+    datasets = [{
+      label: 'Celková hledanost',
+      data: months.map(m => rawData.reduce((s,r) => s + (r.monthly[m]||0), 0)),
+      backgroundColor: 'rgba(8,48,39,0.78)',
+      borderColor: '#083027',
+      borderWidth: 2, borderRadius: 5,
+      fill: false, tension: 0.38,
+      pointRadius: 4, pointBackgroundColor: '#083027',
+    }];
+  } else {
+    datasets = [...activeChartTags].map(tag => {
+      const color = getTagColor(tag);
+      const rows  = rawData.filter(r => r.tag === tag);
+      return {
+        label: tag,
+        data: months.map(m => rows.reduce((s,r) => s + (r.monthly[m]||0), 0)),
+        backgroundColor: color + 'bb',
+        borderColor: color,
+        borderWidth: 2, borderRadius: 5,
+        fill: false, tension: 0.38,
+        pointRadius: 4, pointBackgroundColor: color,
+      };
+    });
+  }
+
+  const labels = months.map(m => { const i = MONTH_ORDER.indexOf(m); return i>=0 ? MONTH_CS[i] : m; });
+
+  if (seasonChart) { seasonChart.destroy(); seasonChart = null; }
+  seasonChart = new Chart(document.getElementById('seasonChart').getContext('2d'), {
+    type: chartType,
+    data: { labels, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode:'index', intersect:false },
+      plugins: {
+        legend: {
+          display: datasets.length > 1,
+          labels: { font:{family:'DM Sans',size:12}, color:'#64748b', boxWidth:12, padding:16 }
+        },
+        tooltip: {
+          backgroundColor:'#0f172a',
+          titleFont:{family:'Syne',size:12,weight:'700'},
+          bodyFont:{family:'DM Sans',size:12},
+          padding:10,
+          callbacks: { label: c => ` ${c.dataset.label}: ${Math.round(c.parsed.y).toLocaleString('cs')} hledání` }
+        }
+      },
+      scales: {
+        x: { grid:{display:false}, ticks:{font:{family:'DM Sans',size:11},color:'#94a3b8'} },
+        y: { grid:{color:'#f1f5f9'}, ticks:{font:{family:'DM Sans',size:11},color:'#94a3b8', callback:v=>v.toLocaleString('cs')} }
+      }
+    }
+  });
+}
+function toggleChartTag(tag) {
+  if (tag === '__all__') { activeChartTags = new Set(['__all__']); }
+  else {
+    activeChartTags.delete('__all__');
+    activeChartTags.has(tag) ? activeChartTags.delete(tag) : activeChartTags.add(tag);
+    if (!activeChartTags.size) activeChartTags.add('__all__');
+  }
+  renderSeasonChart();
+}
+function setChartType(type, btn) {
+  chartType = type;
+  document.querySelectorAll('.chart-view-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderSeasonChart();
+}
+
+// ── ADVANCED FILTER STATE ──────────────────────────────────────
+let activeCompFilters = new Set();
+
+function setPreset(type, min, max, btn) {
+  const isActive = btn.classList.contains('active');
+  btn.closest('.filter-presets').querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+  if (!isActive) {
+    btn.classList.add('active');
+    if (type === 'search') { document.getElementById('fSearchMin').value = min; document.getElementById('fSearchMax').value = max; }
+    else { document.getElementById('fCpcMin').value = min; document.getElementById('fCpcMax').value = max; }
+  } else {
+    if (type === 'search') { document.getElementById('fSearchMin').value = ''; document.getElementById('fSearchMax').value = ''; }
+    else { document.getElementById('fCpcMin').value = ''; document.getElementById('fCpcMax').value = ''; }
+  }
+  filterTable();
+}
+
+function toggleComp(val) {
+  if (activeCompFilters.has(val)) activeCompFilters.delete(val);
+  else activeCompFilters.add(val);
+  const map = { 'Vysoká':['fCompHigh','active-high'], 'Střední':['fCompMid','active-mid'], 'Nízká':['fCompLow','active-low'] };
+  Object.entries(map).forEach(([k,[id,cls]]) => {
+    document.getElementById(id).className = 'filter-comp-btn' + (activeCompFilters.has(k) ? ' '+cls : '');
+  });
+  filterTable();
+}
+
+function resetFilters() {
+  ['fSearchMin','fSearchMax','fCpcMin','fCpcMax'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('searchInput').value = '';
+  document.getElementById('tagFilter').value = '';
+  activeCompFilters.clear();
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+  ['fCompHigh','fCompMid','fCompLow'].forEach(id => document.getElementById(id).className = 'filter-comp-btn');
+  filterTable();
+}
+
+// ── TABLE FILTER ───────────────────────────────────────────────
+function filterTable() {
+  const q    = (document.getElementById('searchInput')?.value || '').toLowerCase();
+  const tagF = document.getElementById('tagFilter')?.value || '';
+  const sMin = parseFloat(document.getElementById('fSearchMin')?.value) || null;
+  const sMax = parseFloat(document.getElementById('fSearchMax')?.value) || null;
+  const cMin = parseFloat(document.getElementById('fCpcMin')?.value)    || null;
+  const cMax = parseFloat(document.getElementById('fCpcMax')?.value)    || null;
+
+  filteredData = rawData.filter(r => {
+    if (q    && !r.keyword.toLowerCase().includes(q)) return false;
+    if (tagF && r.tag !== tagF) return false;
+    if (activeCompFilters.size && !activeCompFilters.has(r.competition)) return false;
+    if (sMin !== null && r.searches < sMin) return false;
+    if (sMax !== null && sMax > 0 && r.searches > sMax) return false;
+    if (cMin !== null && r.cpc < cMin) return false;
+    if (cMax !== null && cMax > 0 && r.cpc > cMax) return false;
+    return true;
+  });
+
+  if (sortCol) {
+    filteredData.sort((a,b) => {
+      let va=a[sortCol], vb=b[sortCol];
+      if (typeof va==='string') va=va.toLowerCase();
+      if (typeof vb==='string') vb=vb.toLowerCase();
+      return (va<vb?-1:va>vb?1:0)*sortDir;
+    });
+  }
+
+  const fc = document.getElementById('filterCount');
+  if (fc) {
+    const hasFilter = q || tagF || activeCompFilters.size || sMin || sMax || cMin || cMax;
+    fc.textContent = hasFilter ? `${filteredData.length.toLocaleString('cs')} z ${rawData.length.toLocaleString('cs')} slov` : '';
+  }
+
+  currentPage = 1;
+  renderTable();
+}
+
+// ── INLINE TAG RENAME ──────────────────────────────────────────
+function renameTagInline(oldLabel, newLabel) {
+  if (!newLabel || newLabel === oldLabel) return;
+  // Rename in tagRules
+  const rule = tagRules.find(r => r.label === oldLabel);
+  if (rule) rule.label = newLabel;
+  // Rename on all rows
+  rawData.forEach(r => { if (r.tag === oldLabel) r.tag = newLabel; });
+  renderTagRules();
+  renderAll();
+  showToast(`✓ Štítek přejmenován na "${newLabel}"`);
+}
+
+function renderTable() {
+  const cols = [
+    {key:'keyword',label:'Klíčové slovo'},
+    {key:'searches',label:'Hledanost / měs.'},
+    {key:'competition',label:'Konkurence'},
+    {key:'low',label:'CPC nízký'},
+    {key:'high',label:'CPC vysoký'},
+    {key:'cpc',label:'CPC použitý'},
+    ...ctrScenarios.map(ctr=>({key:'cost_'+ctr,label:`Náklady CTR ${ctr}%`,ctr})),
+    {key:'tag',label:'Štítek'},
+  ];
+
+  document.getElementById('tableHead').innerHTML = `<tr>${cols.map(c=>`
+    <th onclick="sortBy('${c.key}')" class="${sortCol===c.key?(sortDir===1?'sorted-asc':'sorted-desc'):''}">${c.label}</th>`).join('')}</tr>`;
+
+  const start = (currentPage-1)*PAGE_SIZE;
+  const tagOptions = ['Bez štítku', ...tagRules.map(r=>r.label)];
+
+  document.getElementById('tableBody').innerHTML = filteredData.slice(start, start+PAGE_SIZE).map(row => {
+    const ri = rawData.indexOf(row);
+    const tagColor = getTagColor(row.tag);
+    return `<tr>${cols.map(c => {
+      if (c.key==='keyword')
+        return `<td class="td-keyword"><span class="td-keyword-text" title="${row.keyword}">${row.keyword}</span></td>`;
+      if (c.key==='competition')
+        return `<td><span class="comp-badge ${compClass(row.competition)}">${row.competition||'—'}</span></td>`;
+      if (c.key==='tag') {
+        const tagColor = getTagColor(row.tag);
+        const allTagOpts = ['Bez štítku', ...tagRules.map(r=>r.label)];
+        return `<td>
+          <select class="tag-select" style="color:${tagColor};border-color:${tagColor}55;"
+            onchange="rawData[${ri}].tag=this.value;renderAll()">
+            ${allTagOpts.map(t=>`<option value="${t}"${row.tag===t?' selected':''}>${t}</option>`).join('')}
+          </select>
+        </td>`;
+      }
+      if (c.ctr!==undefined)
+        return `<td class="td-number td-cost">${formatMoney(row.searches*c.ctr/100*row.cpc, row.currency)}</td>`;
+      if (c.key==='searches') return `<td class="td-number">${Math.round(row.searches).toLocaleString('cs')}</td>`;
+      if (['low','high','cpc'].includes(c.key)) return `<td class="td-number">${row[c.key]?formatMoney(row[c.key],row.currency):'—'}</td>`;
+      return `<td>${row[c.key]||'—'}</td>`;
+    }).join('')}</tr>`;
+  }).join('') || `<tr><td colspan="${cols.length}" style="text-align:center;padding:2rem;color:var(--text-muted);">Žádné výsledky</td></tr>`;
+
+  renderPagination();
+}
+
+function promptRenameTag(oldLabel) {
+  const newLabel = prompt(`Přejmenovat štítek "${oldLabel}" na:`, oldLabel);
+  if (newLabel && newLabel.trim() && newLabel.trim() !== oldLabel) {
+    renameTagInline(oldLabel, newLabel.trim());
+  }
+}
+
+function sortBy(col) { sortDir = sortCol===col ? sortDir*-1 : 1; sortCol=col; renderTable(); }
+
+function renderPagination() {
+  const total = filteredData.length, pages = Math.ceil(total/PAGE_SIZE);
+  const el = document.getElementById('pagination');
+  if (!total) { el.innerHTML=''; return; }
+  const s = (currentPage-1)*PAGE_SIZE+1, e = Math.min(currentPage*PAGE_SIZE,total);
+  let btns='';
+  for (let p=1;p<=pages;p++) {
+    if (pages>10 && Math.abs(p-currentPage)>2 && p!==1 && p!==pages) { if(p===2||p===pages-1) btns+=`<span style="padding:0 4px;color:var(--text-light)">…</span>`; continue; }
+    btns+=`<button class="page-btn${p===currentPage?' active':''}" onclick="goPage(${p})">${p}</button>`;
+  }
+  el.innerHTML=`<span>${s}–${e} z ${total.toLocaleString('cs')} slov</span>
+    <div class="page-btns">
+      <button class="page-btn" onclick="goPage(${currentPage-1})" ${currentPage===1?'disabled':''}>‹</button>
+      ${btns}
+      <button class="page-btn" onclick="goPage(${currentPage+1})" ${currentPage===pages?'disabled':''}>›</button>
+    </div>`;
+}
+function goPage(p) { currentPage=Math.max(1,Math.min(p,Math.ceil(filteredData.length/PAGE_SIZE))); renderTable(); }
+
+function updateTagFilter() {
+  const tags = [...new Set(rawData.map(r=>r.tag))].filter(Boolean);
+  const sel = document.getElementById('tagFilter'), cur = sel.value;
+  sel.innerHTML = '<option value="">Všechny štítky</option>' + tags.map(t=>`<option value="${t}"${t===cur?' selected':''}>${t}</option>`).join('');
+}
+
+// ── EXPORT ─────────────────────────────────────────────────────
+function exportCSV() {
+  if (!filteredData.length) { showToast('⚠ Žádná data k exportu'); return; }
+  const allM = new Set(); rawData.forEach(r=>Object.keys(r.monthly).forEach(m=>allM.add(m)));
+  const months = MONTH_ORDER.filter(m=>allM.has(m));
+  const headers = ['Klíčové slovo','Hledanost / měs.','Konkurence','CPC nízký','CPC vysoký','CPC použitý',
+    ...ctrScenarios.map(c=>`Prokliky CTR ${c}%`),
+    ...ctrScenarios.map(c=>`Náklady CTR ${c}%`),
+    'Štítek', ...months.map(m=>`Hledanost ${m}`)];
+  const rows = filteredData.map(r=>[
+    r.keyword, Math.round(r.searches), r.competition,
+    r.low?r.low.toFixed(2):'', r.high?r.high.toFixed(2):'', r.cpc?r.cpc.toFixed(2):'',
+    ...ctrScenarios.map(c=>Math.round(r.searches*c/100)),
+    ...ctrScenarios.map(c=>Math.round(r.searches*c/100*r.cpc)),
+    r.tag, ...months.map(m=>r.monthly[m]||0),
+  ]);
+  const csv = '\uFEFF' + [headers,...rows].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(';')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
+  a.download = `keyword-analysis-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  showToast('✓ Export dokončen');
+}
+
+// ── TOAST ──────────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>
